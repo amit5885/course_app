@@ -1,11 +1,11 @@
 import { Router } from "express";
 const courseRouter = Router();
 
-courseRouter.get("/courses", (req, res) => {
+courseRouter.get("/preview", (req, res) => {
   res.send("List of courses");
 });
 
-courseRouter.get("/courses/purchase", (req, res) => {
+courseRouter.post("/purchase", (req, res) => {
   res.send("Purchased");
 });
 
