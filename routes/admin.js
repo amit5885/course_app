@@ -2,12 +2,12 @@ import { adminModel, purchaseModel, courseModel } from "../db.js";
 import bycrypt from "bcryptjs";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
+import { JWT_ADMIN_SECRET } from "../config.js";
 import { Router } from "express";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_ADMIN_SECRET;
 const adminRouter = Router();
 
 //Zod schema for User signup validation
@@ -92,7 +92,7 @@ adminRouter.post("/signin", async (req, res) => {
       {
         id: admin._id,
       },
-      JWT_SECRET,
+      JWT_ADMIN_SECRET,
       { expiresIn: "1d" },
     );
 
