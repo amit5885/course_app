@@ -1,4 +1,4 @@
-import { adminModel, purchaseModel, courseModel } from "../db.js";
+import { adminModel, courseModel } from "../db.js";
 import bycrypt from "bcryptjs";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -163,16 +163,81 @@ adminRouter.post("/course", adminMiddleware, async (req, res) => {
   }
 });
 
-adminRouter.put("/course", (req, res) => {
-  res.json({
-    message: "Course updated",
-  });
+adminRouter.put("/course", adminMiddleware, async (req, res) => {
+  try {
+    const adminId = req.userId;
+
+    const { title, description, imageUrl, price, courseId } =
+      courseSchema.parse(req.body);
+
+    // const course = await courseModel.findOne({
+    //   _id: courseId,
+    //   creatorId: adminId,
+    // });
+
+    // if (!course) {
+    //   return res.status(403).json({
+    //     message: "You are not authorized to update this course",
+    //   });
+    // }
+
+    const course = await courseModel.updateOne(
+      {
+        _id: courseId,
+        creatorId: adminId,
+      },
+      {
+        $set: {
+          title,
+          description,
+          imageUrl,
+          price,
+        },
+      },
+    );
+
+    res.json({
+      message: "Course updated",
+      courseId: course._id,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        message: "Validation failed",
+        error: error.errors,
+      });
+    } else {
+      console.log(error);
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
 });
 
-adminRouter.get("/course/bulk", (req, res) => {
-  res.json({
-    message: "Bulk course created",
-  });
+adminRouter.get("/course/bulk", adminMiddleware, async (req, res) => {
+  try {
+    const adminId = req.userId;
+    const courses = await courseModel.find({
+      creatorId: adminId,
+    });
+    res.json({
+      message: "Courses fetched",
+      courses,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        message: "Validation failed",
+        error: error.errors,
+      });
+    } else {
+      console.log(error);
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
 });
 
 export default adminRouter;
