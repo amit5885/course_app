@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { JWT_ADMIN_SECRET } from "../config.js";
 import { Router } from "express";
 import dotenv from "dotenv";
+import adminMiddleware from "../middleware/admin.js";
 
 dotenv.config();
 
@@ -22,6 +23,13 @@ const signupSchema = z.object({
 const signinSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
+});
+
+const courseSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  price: z.number(),
+  imageUrl: z.string(),
 });
 
 adminRouter.post("/signup", async (req, res) => {
@@ -121,10 +129,38 @@ adminRouter.post("/signin", async (req, res) => {
   }
 });
 
-adminRouter.post("/course", (req, res) => {
-  res.json({
-    message: "Course created",
-  });
+adminRouter.post("/course", adminMiddleware, async (req, res) => {
+  try {
+    const adminId = req.userId;
+    const { title, description, imageUrl, price } = courseSchema.parse(
+      req.body,
+    );
+
+    const course = await courseModel.create({
+      title,
+      description,
+      imageUrl,
+      price,
+      creatorId: adminId,
+    });
+
+    res.json({
+      message: "Course created",
+      courseId: course._id,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        message: "Validation failed",
+        error: error.errors,
+      });
+    } else {
+      console.log(error);
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
 });
 
 adminRouter.put("/course", (req, res) => {

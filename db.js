@@ -12,13 +12,6 @@ export const connectDB = async () => {
 
   try {
     console.log("Connecting to the database...");
-    // Add connection options to avoid deprecation warnings
-    // const connectionOptions = {
-    //   useNewUrlParser: true,
-    //   useUnifiedTopology: true,
-    //   useFindAndModify: false,
-    //   useCreateIndex: true,
-    // };
 
     await mongoose.connect(process.env.MONGO_URL);
     console.log("Database connected successfully!");
