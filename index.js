@@ -19,7 +19,7 @@ async function startServer() {
   await connectDB(); // Ensure DB connection before starting the server
 
   const server = app.listen(3000, () => {
-    console.log("Server is running on port 3000");
+    console.log("Server is running at http://localhost:3000");
   });
 
   // Graceful shutdown

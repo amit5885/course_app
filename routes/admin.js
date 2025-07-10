@@ -25,11 +25,15 @@ const signinSchema = z.object({
   password: z.string().min(8),
 });
 
-const courseSchema = z.object({
+const createCourseSchema = z.object({
   title: z.string(),
   description: z.string(),
   price: z.number(),
   imageUrl: z.string(),
+});
+
+const updateCourseSchema = createCourseSchema.extend({
+  courseId: z.string(),
 });
 
 adminRouter.post("/signup", async (req, res) => {
@@ -47,25 +51,15 @@ adminRouter.post("/signup", async (req, res) => {
       lastName,
     });
 
-    res.json(
-      {
-        message: "Signup success",
-      },
-      {
-        status: 201,
-      },
-    );
+    res.status(201).json({
+      message: "Signup success",
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.json(
-        {
-          message: "Validation failed",
-          error: error.errors,
-        },
-        {
-          status: 400,
-        },
-      );
+      res.status(400).json({
+        message: "Validation failed",
+        error: error.errors,
+      });
     } else {
       console.log(error);
       res.status(500).json({
@@ -79,7 +73,7 @@ adminRouter.post("/signin", async (req, res) => {
   try {
     const { email, password } = signinSchema.parse(req.body);
 
-    const admin = await adminModel.findOne({ email, password });
+    const admin = await adminModel.findOne({ email });
 
     if (!admin) {
       return res.status(403).json({
@@ -110,7 +104,7 @@ adminRouter.post("/signin", async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
-    res.json({
+    res.status(200).json({
       message: "Signin success",
       token,
     });
@@ -132,7 +126,7 @@ adminRouter.post("/signin", async (req, res) => {
 adminRouter.post("/course", adminMiddleware, async (req, res) => {
   try {
     const adminId = req.userId;
-    const { title, description, imageUrl, price } = courseSchema.parse(
+    const { title, description, imageUrl, price } = createCourseSchema.parse(
       req.body,
     );
 
@@ -144,7 +138,7 @@ adminRouter.post("/course", adminMiddleware, async (req, res) => {
       creatorId: adminId,
     });
 
-    res.json({
+    res.status(201).json({
       message: "Course created",
       courseId: course._id,
     });
@@ -168,35 +162,29 @@ adminRouter.put("/course", adminMiddleware, async (req, res) => {
     const adminId = req.userId;
 
     const { title, description, imageUrl, price, courseId } =
-      courseSchema.parse(req.body);
+      updateCourseSchema.parse(req.body);
 
-    // const course = await courseModel.findOne({
-    //   _id: courseId,
-    //   creatorId: adminId,
-    // });
+    const course = await courseModel.findOne({
+      _id: courseId,
+      creatorId: adminId,
+    });
 
-    // if (!course) {
-    //   return res.status(403).json({
-    //     message: "You are not authorized to update this course",
-    //   });
-    // }
+    if (!course) {
+      return res.status(403).json({
+        message: "You are not authorized to update this course",
+      });
+    }
 
-    const course = await courseModel.updateOne(
-      {
-        _id: courseId,
-        creatorId: adminId,
+    await courseModel.updateOne({
+      $set: {
+        title,
+        description,
+        imageUrl,
+        price,
       },
-      {
-        $set: {
-          title,
-          description,
-          imageUrl,
-          price,
-        },
-      },
-    );
+    });
 
-    res.json({
+    res.status(200).json({
       message: "Course updated",
       courseId: course._id,
     });
@@ -221,7 +209,7 @@ adminRouter.get("/course/bulk", adminMiddleware, async (req, res) => {
     const courses = await courseModel.find({
       creatorId: adminId,
     });
-    res.json({
+    res.status(200).json({
       message: "Courses fetched",
       courses,
     });
