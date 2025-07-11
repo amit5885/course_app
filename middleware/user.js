@@ -2,13 +2,26 @@ import jwt from "jsonwebtoken";
 import { JWT_USER_SECRET } from "../config.js";
 
 function userMiddleware(req, res, next) {
-  const token = req.header.token;
-  const decoded = jwt.verify(token, JWT_USER_SECRET);
+  try {
+    const authHeader =
+      req.headers["authorization"] || req.headers["Authorization"];
 
-  if (decoded) {
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const decoded = jwt.verify(token, JWT_USER_SECRET);
+
     req.userId = decoded.id;
     next();
-  } else {
+  } catch (error) {
+    console.error(error);
     return res.status(401).json({
       message: "Unauthorized",
     });

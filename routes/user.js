@@ -31,6 +31,14 @@ userRouter.post("/signup", async (req, res) => {
       req.body,
     );
 
+    const user = await userModel.findOne({ email });
+
+    if (user) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
     const hashedPassword = await bycrypt.hash(password, 10);
 
     await userModel.create({
@@ -40,25 +48,15 @@ userRouter.post("/signup", async (req, res) => {
       lastName,
     });
 
-    res.json(
-      {
-        message: "Signup success",
-      },
-      {
-        status: 201,
-      },
-    );
+    res.status(201).json({
+      message: "Signup success",
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.json(
-        {
-          message: "Validation failed",
-          error: error.errors,
-        },
-        {
-          status: 400,
-        },
-      );
+      res.status(400).json({
+        message: "Validation failed",
+        error: error.errors,
+      });
     } else {
       console.log(error);
       res.status(500).json({
@@ -72,7 +70,7 @@ userRouter.post("/signin", async (req, res) => {
   try {
     const { email, password } = signinSchema.parse(req.body);
 
-    const user = await userModel.findOne({ email, password });
+    const user = await userModel.findOne({ email });
 
     if (!user) {
       return res.status(403).json({
@@ -122,9 +120,9 @@ userRouter.post("/signin", async (req, res) => {
   }
 });
 
-userRouter.get("/purchase", userMiddleware, async (req, res) => {
+userRouter.get("/purchases", userMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
 
     const purchases = await purchaseModel.find({ userId });
 
